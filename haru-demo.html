@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Haru — Your day, shaped around how you feel.</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Serif+Display:ital@0;1&family=Shippori+Mincho:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#f0ebe0; --ink:#1c1710; --ink-mid:rgba(28,23,16,.5); --ink-soft:rgba(28,23,16,.28); --ink-faint:rgba(28,23,16,.12);
+  --mustard:#e9b94c; --rust:#b84e28; --silver:#c6c2ba;
+  --mono:'IBM Plex Mono',monospace; --serif:'DM Serif Display',serif; --jp:'Shippori Mincho',serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--cream);color:var(--ink);font-family:var(--mono);cursor:none;position:relative;}
+/* scrollbar hide */
+::-webkit-scrollbar{display:none;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E");}
+
+#cur{position:fixed;width:9px;height:9px;border-radius:50%;background:var(--ink);pointer-events:none;z-index:10000;transform:translate(-50%,-50%);mix-blend-mode:multiply;transition:width .18s,height .18s,background .18s;}
+#cur.hover{width:36px;height:36px;background:var(--mustard);}
+
+/* ══════════════════════════════════
+   LANDING — fixed sidebar | scrollable main
+══════════════════════════════════ */
+#landing{
+  position:fixed;inset:0;
+  display:grid;
+  grid-template-columns:220px 1fr;
+  background:var(--cream);
+  transition:opacity .55s ease,transform .55s ease;
+  z-index:2;
+}
+#landing.away{opacity:0;transform:scale(.97) translateY(-10px);pointer-events:none;}
+
+/* sidebar — fixed in place */
+.sb{
+  border-right:1px solid var(--ink-faint);
+  padding:44px 28px 44px 40px;
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+  animation:enterUp .7s .05s both;
+  flex-shrink:0;
+}
+.sb-logo{font-family:var(--serif);font-size:60px;line-height:.88;color:var(--ink);margin-bottom:10px;letter-spacing:-.02em;}
+.sb-logo em{font-style:italic;}
+.sb-est{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-mid);line-height:2.2;}
+.sb-nav{margin-top:auto;display:flex;flex-direction:column;}
+.sb-nav-item{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);padding:9px 0;border-top:1px solid var(--ink-faint);display:flex;align-items:center;gap:8px;cursor:pointer;transition:color .2s;}
+.sb-nav-item:last-child{border-bottom:1px solid var(--ink-faint);}
+.sb-nav-item.on{color:var(--ink);font-weight:600;}
+.sb-nav-item:hover{color:var(--ink);}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:var(--mustard);flex-shrink:0;opacity:0;transition:opacity .2s;}
+.sb-nav-item.on .sb-dot{opacity:1;}
+
+/* scrollable right column */
+.mn{
+  overflow-y:scroll;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  animation:enterUp .7s .12s both;
+}
+
+/* ── SECTION wrapper — each section is a full-height screen ── */
+.section{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border-bottom:1px solid var(--ink-faint);
+}
+.section:last-child{border-bottom:none;}
+
+/* cards zone — 20% bigger */
+.cards-zone{
+  display:flex;align-items:center;justify-content:center;
+  padding:72px 32px 56px 64px;
+  border-right:1px solid var(--ink-faint);
+}
+.stack{position:relative;width:340px;height:480px;}
+
+/* c3 — silver receipt card, wide, behind right */
+.c3{position:absolute;right:-52px;top:24px;width:308px;height:452px;background:var(--silver);border-radius:22px;padding:28px 24px 22px;transform:rotate(4.5deg);box-shadow:0 8px 28px rgba(0,0,0,.09);animation:f3 7s ease-in-out infinite;transition:transform .4s ease,box-shadow .4s ease;}
+.c3:hover{animation-play-state:paused;transform:rotate(7deg) translateY(-12px);box-shadow:0 16px 40px rgba(0,0,0,.14);}
+.c3-stamp{position:absolute;top:16px;right:16px;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(0,0,0,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.c3-stamp-top{font-size:5.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.32);line-height:1.35;text-align:center;}
+.c3-stamp-n{font-size:9px;color:rgba(0,0,0,.4);font-weight:500;}
+.c3-field{margin-top:52px;}
+.c3-lbl{font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(0,0,0,.32);margin-bottom:3px;}
+.c3-val{font-family:var(--jp);font-size:16px;color:rgba(0,0,0,.7);margin-bottom:18px;line-height:1.3;}
+.c3-tear{position:absolute;bottom:20px;left:18px;right:18px;border-top:1.5px dashed rgba(0,0,0,.18);padding-top:8px;display:flex;justify-content:space-between;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,0,0,.22);}
+
+/* c2 — rust spine card, matches c1 dimensions */
+.c2{position:absolute;left:56px;top:24px;width:288px;height:452px;background:var(--rust);border-radius:22px;overflow:hidden;transform:rotate(-1.5deg);box-shadow:0 8px 28px rgba(0,0,0,.14);animation:f2 8s ease-in-out infinite;transition:transform .4s ease,box-shadow .4s ease;}
+.c2:hover{animation-play-state:paused;transform:rotate(-4deg) translateY(-12px);box-shadow:0 16px 40px rgba(0,0,0,.2);}
+.c2-spine{writing-mode:vertical-rl;text-orientation:mixed;position:absolute;right:14px;top:24px;font-size:7.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.32);}
+
+/* c1 — mustard front card */
+.c1{position:absolute;left:0;top:0;width:288px;height:452px;background:var(--mustard);border-radius:22px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.16),0 4px 10px rgba(0,0,0,.09);animation:f1 9s ease-in-out infinite;display:flex;flex-direction:column;transition:transform .4s ease,box-shadow .4s ease;}
+.c1:hover{animation-play-state:paused;transform:translateY(-12px) rotate(-2deg);box-shadow:0 20px 50px rgba(0,0,0,.2),0 8px 20px rgba(0,0,0,.12);}
+
+/* notch at BOTTOM (flipped 180°) — like a hotel door hanger */
+.c1-notch{width:100%;height:26px;flex-shrink:0;position:relative;overflow:hidden;order:2;margin-top:auto;}
+.c1-notch::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;box-shadow:0 0 0 200px var(--mustard);background:var(--mustard);}
+
+.c1-body{padding:20px 24px 16px;display:flex;flex-direction:column;flex:1;order:1;}
+.c1-eye{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(0,0,0,.36);margin-bottom:6px;}
+.c1-hl{font-family:var(--serif);font-size:40px;line-height:.97;color:var(--ink);margin-bottom:8px;}
+.c1-hl em{font-style:italic;}
+.c1-sub{font-family:var(--jp);font-size:13px;color:rgba(0,0,0,.48);line-height:1.55;margin-bottom:auto;}
+.c1-moods{display:flex;gap:5px;margin-top:14px;align-items:center;}
+.pip{width:7px;height:7px;border-radius:50%;}
+.c1-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;}
+.c1-quote{font-size:8px;color:rgba(0,0,0,.3);line-height:1.85;letter-spacing:.04em;max-width:150px;text-transform:uppercase;}
+.c1-id{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+.c1-id-top{font-size:5.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.32);}
+.c1-id-n{font-size:10px;color:rgba(0,0,0,.46);font-weight:500;}
+@keyframes f1{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-9px) rotate(.4deg)}}
+@keyframes f2{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-6px) rotate(-2deg)}}
+@keyframes f3{0%,100%{transform:rotate(4.5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5px)}}
+
+/* copy zone */
+.copy-zone{
+  padding:56px 56px 100px 52px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;
+}
+#sec-idea .copy-zone{padding-right:140px;}
+.copy-kicker{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-mid);margin-bottom:14px;}
+.copy-title{font-family:var(--serif);font-size:52px;line-height:.94;color:var(--ink);margin-bottom:18px;letter-spacing:-.01em;}
+.copy-title em{font-style:italic;}
+.copy-body{font-family:var(--jp);font-size:14px;color:var(--ink-mid);line-height:1.72;max-width:320px;margin-bottom:0;}
+.mood-tbl{width:100%;border-top:1px solid var(--ink-faint);}
+.mrow-d{display:grid;grid-template-columns:22px 1fr auto auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--ink-faint);font-size:10px;}
+.mood-n{color:var(--ink-soft);font-size:8px;}
+.mood-lbl{letter-spacing:.04em;text-transform:uppercase;color:rgba(28,23,16,.62);}
+.mood-shp{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);}
+.cta-row{display:flex;flex-direction:column;gap:5px;}
+.cta-lbl{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
+.cta-big{font-family:var(--jp);font-size:20px;color:var(--ink);display:flex;align-items:center;gap:12px;}
+.cta-btn{width:34px;height:34px;border-radius:50%;background:var(--ink);border:none;display:flex;align-items:center;justify-content:center;color:var(--cream);font-size:14px;flex-shrink:0;animation:aB 2s ease-in-out infinite;cursor:none;}
+@keyframes aB{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+
+/* ── INNER SECTIONS ── */
+.sec-left{
+  padding:72px 48px 72px 64px;
+  display:flex;flex-direction:column;justify-content:center;
+  border-right:1px solid var(--ink-faint);
+}
+.sec-right{
+  padding:72px 56px 72px 52px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.sec-num{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:16px;}
+.sec-title{font-family:var(--serif);font-size:44px;line-height:.95;color:var(--ink);margin-bottom:20px;letter-spacing:-.01em;}
+.sec-title em{font-style:italic;}
+.sec-body{font-family:var(--jp);font-size:14px;color:var(--ink-mid);line-height:1.78;max-width:360px;}
+.sec-divider{border:none;border-top:1px solid var(--ink-faint);margin:28px 0;}
+
+/* mood cards grid for Five Moods section */
+.mood-cards{display:flex;flex-direction:column;gap:12px;}
+.mood-card{padding:16px 20px;border-radius:10px;border:1px solid var(--ink-faint);}
+.mood-card-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.mood-card-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.mood-card-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);}
+.mood-card-shape{margin-left:auto;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+.mood-card-desc{font-family:var(--jp);font-size:12px;color:var(--ink-mid);line-height:1.6;}
+
+/* how it works steps */
+.steps{display:flex;flex-direction:column;gap:0;}
+.step{display:grid;grid-template-columns:36px 1fr;gap:16px;padding:20px 0;border-bottom:1px solid var(--ink-faint);}
+.step:last-child{border-bottom:none;}
+.step-n{font-size:11px;color:var(--ink-soft);font-family:var(--mono);padding-top:2px;}
+.step-content{display:block;}
+.step-title{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin-bottom:5px;}
+.step-body{font-family:var(--jp);font-size:13px;color:var(--ink-mid);line-height:1.65;}
+
+/* design tokens */
+.token-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;}
+.token{padding:16px;border:1px solid var(--ink-faint);border-radius:8px;}
+.token-swatch{width:100%;height:36px;border-radius:5px;margin-bottom:10px;}
+.token-name{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px;}
+.token-val{font-size:11px;color:var(--ink);}
+
+.cta-fixed{position:fixed;bottom:28px;right:28px;z-index:100;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--cream);padding:12px 20px;border-radius:8px;font-family:var(--jp);font-size:15px;letter-spacing:.04em;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.cta-fixed:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.25);}
+.cta-fixed.hidden{opacity:0;pointer-events:none;transition:opacity .4s;}
+
+@keyframes enterUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════════════════
+   PHONE SCENE
+══════════════════════════════════ */
+#scene{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--cream);
+  opacity:0;pointer-events:none;
+  visibility:hidden;
+  transition:opacity .5s ease;
+}
+#scene.on{opacity:1;pointer-events:all;visibility:visible;}
+#scene::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 55% at 50% 52%,rgba(233,185,76,.13) 0%,transparent 70%);}
+
+.phone{
+  width:390px;height:844px;border-radius:50px;overflow:hidden;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 0 0 10px #0c0c0c,0 0 0 11px rgba(255,255,255,.07),0 56px 100px rgba(0,0,0,.32);
+  transform:translateY(80px);transition:transform .7s cubic-bezier(.32,.72,0,1);
+}
+#scene.on .phone{transform:translateY(0);}
+
+.p-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#0c0c0c;border-radius:20px;z-index:300;}
+.p-wall{position:absolute;inset:0;background:linear-gradient(165deg,#5b7fb8 0%,#7b9fd4 25%,#9b8fc4 50%,#b8a8d8 75%,#6b8fc4 100%);}
+.p-wall::after{content:'';position:absolute;inset:0;background-image:
+  radial-gradient(ellipse 80% 60% at 70% 30%,rgba(139,159,212,.4) 0%,transparent 50%),
+  radial-gradient(ellipse 60% 80% at 30% 70%,rgba(184,168,216,.3) 0%,transparent 50%);}
+
+.p-sb{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 24px 0;z-index:200;}
+.p-time{font-size:15px;font-weight:600;color:rgba(0,0,0,.85);letter-spacing:-.02em;font-family:var(--mono);}
+.p-icons{display:flex;align-items:center;gap:6px;}
+.p-icons svg{opacity:.8;}
+
+.p-hs{position:absolute;top:54px;left:0;right:0;bottom:0;display:flex;flex-direction:column;padding:8px 16px 0;gap:10px;z-index:10;transition:filter .45s ease;}
+.p-hs.dim{filter:blur(6px) brightness(.6) saturate(.85);}
+.wrow{display:flex;gap:10px;}
+.lg{background:rgba(255,255,255,.25);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);border:1px solid rgba(255,255,255,.35);box-shadow:0 2px 16px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.4);}
+.wweather{flex:1;height:140px;border-radius:22px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;}
+.wx-city{font-size:11px;font-weight:600;color:rgba(0,0,0,.7);font-family:var(--mono);}
+.wx-tmp{font-size:36px;font-weight:200;color:rgba(0,0,0,.9);line-height:1;font-family:var(--mono);letter-spacing:-.02em;}
+.wx-desc{font-size:11px;color:rgba(0,0,0,.6);font-family:var(--mono);}
+.wx-hl{font-size:10px;color:rgba(0,0,0,.5);font-family:var(--mono);}
+.wfindmy{flex:1;height:140px;border-radius:22px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
+.wfindmy::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(100,180,220,.4) 0%,rgba(140,160,200,.5) 100%);}
+.wfindmy-inner{position:relative;z-index:1;display:flex;flex-direction:column;flex:1;}
+.wfindmy-avatar{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8b7355,#6b5344);}
+.wfindmy-loc{font-size:13px;font-weight:600;color:rgba(0,0,0,.85);font-family:var(--mono);}
+.wfindmy-addr{font-size:10px;color:rgba(0,0,0,.55);font-family:var(--mono);}
+.wfindmy-lbl{font-size:10px;color:rgba(0,0,0,.45);font-family:var(--mono);margin-top:auto;}
+.p-search{height:36px;margin:4px 0;padding:0 16px;background:rgba(255,255,255,.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:10px;border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(0,0,0,.5);font-family:var(--mono);}
+.p-search svg{width:16px;height:16px;opacity:.6;}
+.igrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px;}
+.ic{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.ic-img{width:62px;height:62px;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(255,255,255,.4);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border:1px solid rgba(255,255,255,.5);box-shadow:0 2px 12px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.5);}
+.ic-n{font-size:10px;color:rgba(0,0,0,.75);text-align:center;text-shadow:0 1px 2px rgba(255,255,255,.5);font-family:var(--mono);font-weight:300;}
+.dock{position:absolute;bottom:16px;left:14px;right:14px;height:86px;background:rgba(255,255,255,.35);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border-radius:28px;border:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6);display:flex;align-items:center;justify-content:space-around;padding:0 14px;z-index:10;transition:filter .45s ease;}
+.dock.dim{filter:blur(6px) brightness(.6) saturate(.85);}
+.di{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.3);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.4);box-shadow:0 2px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.5);}
+.p-home-bar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:rgba(0,0,0,.25);z-index:400;}
+
+.sov{position:absolute;inset:0;z-index:100;pointer-events:none;display:flex;align-items:flex-end;}
+.sov.on{pointer-events:all;}
+.sht{width:100%;background:transparent;transform:translateY(100%);transition:transform .52s cubic-bezier(.32,.72,0,1);}
+.sov.on .sht{transform:translateY(0);}
+.sht-in{padding:28px 22px 32px;}
+.ccon{width:100%;perspective:1200px;position:relative;height:460px;}
+.cflip{width:100%;height:100%;position:relative;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .75s cubic-bezier(.4,.2,.2,1);}
+.cflip.flipped{transform:rotateY(180deg);}
+.cface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.cface-back{position:absolute;inset:0;transform:rotateY(180deg);overflow-y:auto;scrollbar-width:none;}
+.cface-back::-webkit-scrollbar{display:none;}
+
+.fc{background:#e9b94c;border-radius:18px;overflow-y:auto;scrollbar-width:none;height:100%;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.17),0 2px 6px rgba(0,0,0,.09);}
+.fc::-webkit-scrollbar{display:none;}
+.notch-strip{width:100%;height:26px;flex-shrink:0;position:relative;overflow:hidden;}
+.fc .notch-strip{display:none;}
+.notch-strip::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;box-shadow:0 0 0 200px #e9b94c;background:transparent;}
+.notch-strip.cream::before{box-shadow:0 0 0 200px #f0ebe0;}
+.fc-in{padding:10px 24px 18px;display:flex;flex-direction:column;flex:1;}
+.fc-eye{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(0,0,0,.38);margin-bottom:4px;}
+.fc-hl{font-family:var(--serif);font-size:26px;line-height:1.07;margin-bottom:4px;color:var(--ink);}
+.fc-hl em{font-style:italic;}
+.fc-date{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,0,0,.35);margin-bottom:10px;}
+.tear{border:none;border-top:1.5px dashed rgba(0,0,0,.16);margin-bottom:10px;}
+.mds{display:flex;flex-direction:column;flex:1;}
+.mdr{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.09);cursor:pointer;transition:opacity .15s;}
+.mdr:last-child{border-bottom:none;}
+.mdr:hover{opacity:.6;}
+.mdn{font-size:11px;color:rgba(0,0,0,.28);min-width:18px;}
+.mdl{font-size:13px;color:rgba(0,0,0,.7);letter-spacing:.04em;flex:1;text-transform:uppercase;}
+.mdp{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.mda{font-size:13px;color:rgba(0,0,0,.28);}
+.fc-foot{margin-top:auto;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-end;}
+.fc-qt{font-size:9.5px;color:rgba(0,0,0,.28);line-height:1.85;letter-spacing:.04em;text-transform:uppercase;max-width:176px;}
+.fc-stamp{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+.fc-stamp-t{font-size:6px;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.3);}
+.fc-stamp-n{font-size:10px;color:rgba(0,0,0,.46);font-weight:500;}
+
+.bc{background:#f0ebe0;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.07);height:100%;display:flex;flex-direction:column;border:1px solid rgba(0,0,0,.05);overflow-y:auto;scrollbar-width:none;}
+.bc::-webkit-scrollbar{display:none;}
+.bc-rstamp{position:absolute;top:16px;right:16px;width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(0,0,0,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+.bc-rt{font-size:5.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.28);line-height:1.35;text-align:center;}
+.bc-rn{font-size:9px;color:rgba(0,0,0,.38);}
+.bc-in{padding:20px 24px 24px;display:flex;flex-direction:column;flex:1;}
+.back-btn{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(0,0,0,.28);cursor:pointer;margin-bottom:16px;display:inline-block;transition:color .15s;}
+.back-btn:hover{color:rgba(0,0,0,.6);}
+.bc-eye{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,0,0,.32);margin-bottom:4px;}
+.bc-msg{font-family:var(--serif);font-size:22px;line-height:1.18;margin-bottom:6px;color:var(--ink);}
+.bc-srow{display:flex;align-items:center;gap:7px;margin-bottom:16px;}
+.bc-spip{width:6px;height:6px;border-radius:50%;}
+.bc-stxt{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:rgba(0,0,0,.3);}
+.bc-div{border:none;border-top:1.5px dashed rgba(0,0,0,.13);margin-bottom:14px;}
+.feat{margin-bottom:14px;padding:13px 15px;background:rgba(0,0,0,.04);border-radius:10px;border-left:3px solid rgba(0,0,0,.14);}
+.feat-eye{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(0,0,0,.28);margin-bottom:5px;}
+.feat-title{font-family:var(--jp);font-size:14px;color:var(--ink);line-height:1.35;margin-bottom:7px;font-weight:500;}
+.feat-row{display:flex;align-items:center;justify-content:space-between;}
+.feat-src{font-size:10px;color:rgba(0,0,0,.28);letter-spacing:.06em;}
+.chkb{width:18px;height:18px;border:1.5px solid rgba(0,0,0,.18);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;cursor:pointer;transition:all .15s;}
+.chkb.done{background:var(--ink);color:#f5f0e8;border-color:transparent;}
+.tl2{border:none;border-top:1.5px dashed rgba(0,0,0,.13);margin-bottom:12px;}
+.tsk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;}
+.tsk:last-child{border-bottom:none;}
+.tsk:hover{opacity:.7;}
+.tsk-t{font-size:11px;color:rgba(0,0,0,.26);min-width:38px;font-variant-numeric:tabular-nums;letter-spacing:.04em;flex-shrink:0;}
+.tsk-a{font-size:12px;color:rgba(0,0,0,.2);display:inline-block;transition:transform .2s;flex-shrink:0;}
+.tsk-n{font-size:13px;color:rgba(0,0,0,.58);flex:1;letter-spacing:.01em;line-height:1.4;}
+.tsk-c{width:13px;height:13px;border:1px solid rgba(0,0,0,.16);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;cursor:pointer;transition:all .12s;}
+.tsk-c.done{background:var(--ink);color:#f5f0e8;border-color:transparent;}
+.src-row{display:none;padding:3px 0 7px 50px;border-bottom:1px solid rgba(0,0,0,.06);font-size:10px;color:rgba(0,0,0,.28);letter-spacing:.1em;text-transform:uppercase;}
+.src-row.open{display:block;}
+.bc-foot{margin-top:auto;padding-top:10px;border-top:1.5px dashed rgba(0,0,0,.11);display:flex;justify-content:space-between;align-items:center;}
+.bc-quote{font-size:9.5px;color:rgba(0,0,0,.22);letter-spacing:.07em;line-height:1.9;text-transform:uppercase;max-width:200px;}
+.bc-tear{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.18);}
+
+/* back hint in scene */
+#back-hint{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);pointer-events:none;z-index:600;opacity:0;transition:opacity .5s .4s;}
+#scene.on #back-hint{opacity:1;}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="sb">
+    <div class="sb-logo">Haru<br><em>晴</em></div>
+    <div class="sb-est">Est. 2026<br>San Francisco<br>iOS</div>
+    <nav class="sb-nav">
+      <div class="sb-nav-item on"><div class="sb-dot"></div>The Idea</div>
+      <div class="sb-nav-item"><div class="sb-dot"></div>Five Moods</div>
+      <div class="sb-nav-item"><div class="sb-dot"></div>How It Works</div>
+      <div class="sb-nav-item"><div class="sb-dot"></div>Design</div>
+    </nav>
+  </div>
+
+  <div class="mn" id="mn">
+
+    <!-- SECTION 1: The Idea -->
+    <div class="section" id="sec-idea">
+      <div class="cards-zone">
+        <div class="stack">
+          <div class="c3">
+            <div class="c3-stamp"><div class="c3-stamp-top">TODAY'S<br>PLAN</div><div class="c3-stamp-n">068</div></div>
+            <div class="c3-field">
+              <div class="c3-lbl">Your day shape</div>
+              <div class="c3-val">Today:<br>One Thing</div>
+              <div class="c3-lbl">AI message</div>
+              <div class="c3-val" style="font-size:12px;color:rgba(0,0,0,.48)">"One thing at a time.<br>That's all."</div>
+            </div>
+            <div class="c3-tear"><span>Tear here for receipt</span><span>✂</span></div>
+          </div>
+          <div class="c2"><div class="c2-spine">HARU · HOW ARE YOU TODAY · 2026</div></div>
+          <div class="c1">
+            <div class="c1-body">
+              <div class="c1-eye">Daily Check-in · Mar 9</div>
+              <div class="c1-hl">How<br>are you<br><em>feeling</em></div>
+              <div class="c1-sub">Your day takes<br>the shape of how<br>you actually feel.</div>
+              <div class="c1-moods">
+                <div class="pip" style="background:#34C759"></div>
+                <div class="pip" style="background:#d4a800"></div>
+                <div class="pip" style="background:#d44a00"></div>
+                <div class="pip" style="background:#0055cc"></div>
+                <div class="pip" style="background:#7a30cc"></div>
+              </div>
+              <div class="c1-foot">
+                <div class="c1-quote">The secret of getting ahead is getting started. — Twain</div>
+                <div class="c1-id"><div class="c1-id-top">ID</div><div class="c1-id-n">068</div></div>
+              </div>
+            </div>
+            <div class="c1-notch"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="copy-zone">
+        <div>
+          <div class="copy-kicker">A new kind of daily planner</div>
+          <div class="copy-title">Your day,<br>shaped around<br>how you <em>feel.</em></div>
+          <div class="copy-body">No productivity app asks how you're doing before telling you what to do. Haru does. Every morning, one question. Your answer shapes everything.</div>
+        </div>
+        <div class="mood-tbl">
+          <div class="mrow-d"><span class="mood-n">01</span><span class="mood-lbl">I'm good, let's go</span><div class="pip" style="background:#34C759;margin-left:auto"></div><span class="mood-shp">Full Energy</span></div>
+          <div class="mrow-d"><span class="mood-n">02</span><span class="mood-lbl">Tired but trying</span><div class="pip" style="background:#d4a800;margin-left:auto"></div><span class="mood-shp">Gentle Pace</span></div>
+          <div class="mrow-d"><span class="mood-n">03</span><span class="mood-lbl">Anxious / overwhelmed</span><div class="pip" style="background:#d44a00;margin-left:auto"></div><span class="mood-shp">One Thing</span></div>
+          <div class="mrow-d"><span class="mood-n">04</span><span class="mood-lbl">Low and heavy</span><div class="pip" style="background:#0055cc;margin-left:auto"></div><span class="mood-shp">Just Exist</span></div>
+          <div class="mrow-d"><span class="mood-n">05</span><span class="mood-lbl">Scattered, can't focus</span><div class="pip" style="background:#7a30cc;margin-left:auto"></div><span class="mood-shp">Shaped</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Five Moods -->
+    <div class="section" id="sec-moods">
+      <div class="sec-left">
+        <div class="sec-num">02 — Five Moods</div>
+        <div class="sec-title">Every feeling<br>gets a <em>shape.</em></div>
+        <div class="sec-body">Most apps treat every day like a full-energy day. Haru doesn't. You get five emotional starting points — and each one unlocks a different kind of day. No labels, no judgment. Just your pace.</div>
+        <hr class="sec-divider">
+        <div class="sec-body" style="font-size:13px;color:var(--ink-soft);">The language matters: Haru never reflects your emotional state back at you. "Today: One Thing" — not "You're anxious." The app holds the shape, not the feeling.</div>
+      </div>
+      <div class="sec-right">
+        <div class="mood-cards">
+          <div class="mood-card">
+            <div class="mood-card-top"><div class="mood-card-pip" style="background:#34C759"></div><span class="mood-card-lbl">I'm good, let's go</span><span class="mood-card-shape">Full Energy</span></div>
+            <div class="mood-card-desc">Your full task list, deep work blocks, and ambitious goals. Everything's on the table today.</div>
+          </div>
+          <div class="mood-card">
+            <div class="mood-card-top"><div class="mood-card-pip" style="background:#d4a800"></div><span class="mood-card-lbl">Tired but trying</span><span class="mood-card-shape">Gentle Pace</span></div>
+            <div class="mood-card-desc">A lighter load. The essentials only. Breathing room built in. Showing up is enough.</div>
+          </div>
+          <div class="mood-card">
+            <div class="mood-card-top"><div class="mood-card-pip" style="background:#d44a00"></div><span class="mood-card-lbl">Anxious / overwhelmed</span><span class="mood-card-shape">One Thing</span></div>
+            <div class="mood-card-desc">One task. That's your whole day. Everything else waits. You don't have to see the whole staircase.</div>
+          </div>
+          <div class="mood-card">
+            <div class="mood-card-top"><div class="mood-card-pip" style="background:#0055cc"></div><span class="mood-card-lbl">Low and heavy</span><span class="mood-card-shape">Just Exist</span></div>
+            <div class="mood-card-desc">No tasks. Just gentle reminders that you're here. One small win if you want it. That's all.</div>
+          </div>
+          <div class="mood-card">
+            <div class="mood-card-top"><div class="mood-card-pip" style="background:#7a30cc"></div><span class="mood-card-lbl">Scattered, can't focus</span><span class="mood-card-shape">Shaped</span></div>
+            <div class="mood-card-desc">Time-boxed micro-tasks. Short sprints. Structure to anchor a drifting mind.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: How It Works -->
+    <div class="section" id="sec-how">
+      <div class="sec-left">
+        <div class="sec-num">03 — How It Works</div>
+        <div class="sec-title">One question.<br>Every <em>morning.</em></div>
+        <div class="sec-body">Haru is a single daily ritual. Open the app when you wake up. Answer honestly. Everything else follows — automatically shaped around your answer. No setup. No system. Just one question.</div>
+      </div>
+      <div class="sec-right">
+        <div class="steps">
+          <div class="step">
+            <div class="step-n">01</div>
+            <div class="step-content">
+              <div class="step-title">Morning check-in</div>
+              <div class="step-body">A notification at your preferred time. Open Haru. You see one question: how are you feeling today? Five options. Tap one.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-n">02</div>
+            <div class="step-content">
+              <div class="step-title">AI reads your day</div>
+              <div class="step-body">Haru scans your calendar, reminders, and inbox. It filters and re-orders your day based on your emotional state — not your productivity score.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-n">03</div>
+            <div class="step-content">
+              <div class="step-title">Your day takes shape</div>
+              <div class="step-body">A card appears. Your day shape at the top. One featured task. A short task list. A message written for how you feel. Nothing more.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-n">04</div>
+            <div class="step-content">
+              <div class="step-title">Completion tracking</div>
+              <div class="step-body">Check things off as you go. At the end of the day, Haru logs your shape and your completions — building a quiet picture of your patterns over time.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Design -->
+    <div class="section" id="sec-design">
+      <div class="sec-left">
+        <div class="sec-num">04 — Design</div>
+        <div class="sec-title">Physical.<br><em>Tactile.</em><br>Quiet.</div>
+        <div class="sec-body">Haru looks like a hotel check-in card because a hotel card is about today — not forever. It's given to you, you use it, and it's gone tomorrow. The receipt aesthetic makes the day feel real, bounded, and completable.</div>
+        <hr class="sec-divider">
+        <div class="sec-body" style="font-size:13px;">Built in Expo / React Native. Designed for iOS first. WidgetKit support planned. The visual language: DM Serif Display, Shippori Mincho, IBM Plex Mono. Paper grain overlay. No dark mode — cream only.</div>
+      </div>
+      <div class="sec-right">
+        <div class="sec-num" style="margin-bottom:20px;">Design tokens</div>
+        <div class="token-grid">
+          <div class="token"><div class="token-swatch" style="background:#e9b94c"></div><div class="token-name">Mustard</div><div class="token-val">#e9b94c</div></div>
+          <div class="token"><div class="token-swatch" style="background:#b84e28"></div><div class="token-name">Rust</div><div class="token-val">#b84e28</div></div>
+          <div class="token"><div class="token-swatch" style="background:#c6c2ba"></div><div class="token-name">Silver</div><div class="token-val">#c6c2ba</div></div>
+          <div class="token"><div class="token-swatch" style="background:#f0ebe0;border:1px solid rgba(0,0,0,.08)"></div><div class="token-name">Cream</div><div class="token-val">#f0ebe0</div></div>
+          <div class="token"><div class="token-swatch" style="background:#1c1710"></div><div class="token-name">Ink</div><div class="token-val">#1c1710</div></div>
+          <div class="token"><div class="token-swatch" style="background:linear-gradient(135deg,#34C759,#d4a800,#d44a00,#0055cc,#7a30cc)"></div><div class="token-name">Moods</div><div class="token-val">5 states</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /landing -->
+
+<div class="cta-fixed" id="cta-fixed" onclick="enterDemo()">View prototype →</div>
+
+<!-- PHONE SCENE -->
+<div id="scene">
+  <div class="phone">
+    <div class="p-notch"></div>
+    <div class="p-wall"></div>
+    <div class="p-sb">
+      <span class="p-time">9:41</span>
+      <div class="p-icons">
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="rgba(0,0,0,.7)"><rect x="0" y="7.5" width="3" height="4.5" rx=".8" opacity=".4"/><rect x="4.5" y="5" width="3" height="7" rx=".8" opacity=".6"/><rect x="9" y="2.5" width="3" height="9.5" rx=".8" opacity=".8"/><rect x="13.5" y="0" width="3" height="12" rx=".8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><circle cx="8" cy="10.5" r="1.2" fill="rgba(0,0,0,.7)"/><path d="M4.8 7.8Q8 5.2 11.2 7.8" stroke="rgba(0,0,0,.7)" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M2.2 5Q8 .8 13.8 5" stroke="rgba(0,0,0,.5)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+        <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="rgba(0,0,0,.5)" stroke-width="1"/><rect x="2" y="2" width="16" height="8" rx="2" fill="rgba(0,0,0,.7)"/><path d="M23 4v4a2 2 0 000-4z" fill="rgba(0,0,0,.4)"/></svg>
+      </div>
+    </div>
+    <div class="p-hs" id="hs">
+      <div class="wrow">
+        <div class="wweather lg">
+          <div class="wx-city">San Francisco</div>
+          <div><div class="wx-tmp">53°</div><div class="wx-desc">Partly Cloudy</div><div class="wx-hl">H:56° L:50°</div></div>
+          <div class="wx-desc" style="font-size:9px;margin-top:auto">Weather</div>
+        </div>
+        <div class="wfindmy lg">
+          <div class="wfindmy-avatar"></div>
+          <div class="wfindmy-inner">
+            <div style="font-size:9px;color:rgba(0,0,0,.4);margin-bottom:2px">Now</div>
+            <div class="wfindmy-loc">Marina Green</div>
+            <div class="wfindmy-addr">San Francisco, CA</div>
+            <div class="wfindmy-lbl">Find My</div>
+          </div>
+        </div>
+      </div>
+      <div class="igrid">
+        <div class="ic"><div class="ic-img" style="background:rgba(81,181,102,.9)"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 8h22a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V11a3 3 0 013-3z" fill="white"/><path d="M25 14l6-4v14l-6-4V14z" fill="white"/></svg></div><div class="ic-n">FaceTime</div></div>
+        <div class="ic"><div class="ic-img"><div style="display:flex;flex-direction:column;align-items:center;width:100%"><div style="background:rgba(229,57,53,.9);width:100%;text-align:center;font-size:7px;font-weight:700;color:white;padding:3px 0 2px;border-radius:10px 10px 0 0;font-family:var(--mono)">TUE</div><div style="font-size:24px;font-weight:200;color:white;font-family:var(--mono)">1</div></div></div><div class="ic-n">Calendar</div></div>
+        <div class="ic"><div class="ic-img"><svg width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="11" r="7" fill="rgba(255,80,80,.8)"/><circle cx="18" cy="25" r="7" fill="rgba(52,199,89,.8)"/><circle cx="11" cy="18" r="7" fill="rgba(255,149,0,.8)"/><circle cx="25" cy="18" r="7" fill="rgba(0,122,255,.8)"/><circle cx="18" cy="18" r="4.5" fill="rgba(255,255,255,.82)"/></svg></div><div class="ic-n">Photos</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(140,140,145,.9)"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M17 8c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9z" fill="white"/><circle cx="17" cy="17" r="6" fill="none" stroke="white" stroke-width="1.5"/><path d="M22 22l5 5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div><div class="ic-n">Camera</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(0,122,255,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><path d="M4 10C4 8.3 5.3 7 7 7h18c1.7 0 3 1.3 3 3v12c0 1.7-1.3 3-3 3H7c-1.7 0-3-1.3-3-3V10z" fill="white"/><path d="M4 13h24M4 13l12 8 12-8" stroke="rgba(0,122,255,.9)" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div><div class="ic-n">Mail</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(255,204,0,.95)"><svg width="32" height="32" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="5" rx="2.5" fill="white"/><rect x="4" y="13" width="24" height="3" rx="1.5" fill="rgba(255,255,255,.8)"/><rect x="4" y="19" width="18" height="3" rx="1.5" fill="rgba(255,255,255,.6)"/><rect x="4" y="25" width="20" height="3" rx="1.5" fill="rgba(255,255,255,.5)"/></svg></div><div class="ic-n">Notes</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(255,149,0,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="8" cy="11" r="3" fill="white"/><circle cx="8" cy="19" r="3" fill="white"/><circle cx="8" cy="27" r="3" fill="white"/><rect x="14" y="9.5" width="14" height="3" rx="1.5" fill="white"/><rect x="14" y="17.5" width="10" height="3" rx="1.5" fill="white"/><rect x="14" y="25.5" width="12" height="3" rx="1.5" fill="white"/></svg></div><div class="ic-n">Reminders</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(255,255,255,.95)"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/><line x1="17" y1="17" x2="17" y2="6" stroke="rgba(0,0,0,.6)" stroke-width="2" stroke-linecap="round"/><line x1="17" y1="17" x2="24" y2="13" stroke="rgba(0,0,0,.5)" stroke-width="1.5" stroke-linecap="round"/><circle cx="17" cy="17" r="2" fill="rgba(0,0,0,.4)"/></svg></div><div class="ic-n">Clock</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(255,59,48,.95)"><svg width="32" height="32" viewBox="0 0 32 32"><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="700" fill="white" font-family="system-ui">N</text></svg></div><div class="ic-n">News</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(0,0,0,.95)"><svg width="32" height="32" viewBox="0 0 32 32"><text x="16" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="white" font-family="system-ui">tv</text></svg></div><div class="ic-n">TV</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(138,43,226,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" opacity=".9"/><path d="M12 12h8v8h-8z" fill="rgba(138,43,226,.9)"/></svg></div><div class="ic-n">Podcasts</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(0,122,255,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="700" fill="white" font-family="system-ui">A</text></svg></div><div class="ic-n">App Store</div></div>
+        <div class="ic"><div class="ic-img"><svg width="32" height="32" viewBox="0 0 32 32"><path d="M16 6l-8 6v12h16V12l-8-6z" fill="rgba(255,59,48,.8)"/><path d="M16 8l6 4.5v10H10V12.5L16 8z" fill="rgba(255,149,0,.6)"/><path d="M16 10l4 3v9h-8v-9l4-3z" fill="rgba(52,199,89,.5)"/><circle cx="16" cy="16" r="3" fill="white" opacity=".9"/></svg></div><div class="ic-n">Maps</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(255,59,48,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><path d="M16 8c-4 0-7 3-7 7 0 2 1 4 2 5l9 9 9-9c1-1 2-3 2-5 0-4-3-7-7-7z" fill="white"/></svg></div><div class="ic-n">Health</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(139,90,43,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="white"/><rect x="10" y="8" width="12" height="8" rx="1" fill="rgba(139,90,43,.4)"/><rect x="10" y="18" width="12" height="4" rx="1" fill="rgba(139,90,43,.3)"/></svg></div><div class="ic-n">Wallet</div></div>
+        <div class="ic"><div class="ic-img" style="background:rgba(140,140,145,.9)"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3" fill="white"/><path d="M16 4v2M16 26v2M8 16H6M26 16h-2M8.5 8.5l-1.4 1.4M24.9 24.9l-1.4 1.4M8.5 23.5l-1.4-1.4M24.9 7.1l-1.4-1.4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="ic-n">Settings</div></div>
+      </div>
+      <div class="p-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M16 16l4 4"/></svg>Search</div>
+    </div>
+    <div class="dock" id="dk">
+      <div class="di"><svg width="28" height="28" viewBox="0 0 28 28"><path d="M8 6h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="rgba(52,199,89,.95)"/><path d="M11 9l2-2 2 2v6l-2 2-2-2V9z" fill="white"/></svg></div>
+      <div class="di"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="rgba(0,122,255,.9)"/><path d="M14 8l1.5 3 3 .5-2 2 .5 3-3-1.5-3 1.5.5-3-2-2 3-.5z" fill="white"/></svg></div>
+      <div class="di"><svg width="28" height="28" viewBox="0 0 28 28"><path d="M6 10c0-2 2-4 8-4s8 2 8 4v8c0 2-2 4-8 4s-8-2-8-4v-8z" fill="rgba(52,199,89,.95)"/><path d="M10 14c0-2 1.5-3 4-3s4 1 4 3-1.5 3-4 3-4-1-4-3z" fill="white"/></svg></div>
+      <div class="di"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="rgba(255,59,48,.9)"/><path d="M11 10v8l6-4-6-4z" fill="white"/></svg></div>
+    </div>
+    <div class="sov" id="sov">
+      <div class="sht">
+        <div class="sht-in">
+          <div class="ccon">
+            <div class="cflip" id="cflip">
+              <div class="cface">
+                <div class="fc">
+                  <div class="notch-strip"></div>
+                  <div class="fc-in">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                      <div class="fc-eye" style="margin-bottom:0">Daily Check-in · Mar 9</div>
+                      <button onclick="event.stopPropagation();closeSheet()" style="width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.1);border:none;cursor:pointer;font-size:10px;color:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono)">✕</button>
+                    </div>
+                    <div class="fc-hl">How are<br>you <em>feeling</em><br>today?</div>
+                    <div class="fc-date">Monday · Mar 2026</div>
+                    <hr class="tear">
+                    <div class="mds">
+                      <div class="mdr" onclick="event.stopPropagation();pickMood('good')"><span class="mdn">01</span><span class="mdl">I'm good, let's go</span><div class="mdp" style="background:#34C759"></div><span class="mda">›</span></div>
+                      <div class="mdr" onclick="event.stopPropagation();pickMood('tired')"><span class="mdn">02</span><span class="mdl">Tired but trying</span><div class="mdp" style="background:#d4a800"></div><span class="mda">›</span></div>
+                      <div class="mdr" onclick="event.stopPropagation();pickMood('anxious')"><span class="mdn">03</span><span class="mdl">Anxious / overwhelmed</span><div class="mdp" style="background:#d44a00"></div><span class="mda">›</span></div>
+                      <div class="mdr" onclick="event.stopPropagation();pickMood('low')"><span class="mdn">04</span><span class="mdl">Low and heavy</span><div class="mdp" style="background:#0055cc"></div><span class="mda">›</span></div>
+                      <div class="mdr" onclick="event.stopPropagation();pickMood('scattered')"><span class="mdn">05</span><span class="mdl">Scattered, can't focus</span><div class="mdp" style="background:#7a30cc"></div><span class="mda">›</span></div>
+                    </div>
+                    <div class="fc-foot">
+                      <div class="fc-qt">The secret of getting<br>ahead is getting started.<br>— Mark Twain</div>
+                      <div class="fc-stamp"><div class="fc-stamp-t">ID</div><div class="fc-stamp-n">068</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="cface cface-back">
+                <div class="bc" style="position:relative">
+                  <div class="bc-rstamp"><div class="bc-rt">TODAY'S<br>PLAN</div><div class="bc-rn">068</div></div>
+                  <div class="notch-strip cream"></div>
+                  <div class="bc-in">
+                    <div class="back-btn" onclick="event.stopPropagation();flipBack()">← Check-in</div>
+                    <div class="bc-eye">Good morning, Samita</div>
+                    <div class="bc-msg" id="bmsg"></div>
+                    <div class="bc-srow"><div class="bc-spip" id="bpip"></div><div class="bc-stxt" id="bshape"></div></div>
+                    <hr class="bc-div">
+                    <div class="feat">
+                      <div class="feat-eye">Focus on this</div>
+                      <div class="feat-title" id="bfeat"></div>
+                      <div class="feat-row"><span class="feat-src" id="bsrc"></span><div class="chkb" id="bchk" onclick="event.stopPropagation();this.classList.toggle('done')">✓</div></div>
+                    </div>
+                    <hr class="tl2">
+                    <div id="btasks"></div>
+                    <div class="bc-foot">
+                      <div class="bc-quote" id="bquote"></div>
+                      <div class="bc-tear">Tear here ✂</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="p-home-bar"></div>
+  </div>
+  <div id="back-hint">— Click anywhere outside the phone to go back —</div>
+</div>
+
+<script>
+// cursor
+var cur = document.getElementById('cur');
+document.addEventListener('mousemove', function(e) {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top = e.clientY + 'px';
+});
+
+var landing = document.getElementById('landing');
+var scene   = document.getElementById('scene');
+var ctaFixed = document.getElementById('cta-fixed');
+var mn      = document.getElementById('mn');
+var phone   = document.querySelector('.phone');
+
+// ── ENTER: click the → button or "Tap anywhere" CTA area ──
+var openedAt = 0;
+function enterDemo() {
+  if (scene.classList.contains('on')) return;
+  landing.classList.add('away');
+  scene.classList.add('on');
+  if (ctaFixed) ctaFixed.classList.add('hidden');
+  openedAt = Date.now();
+  setTimeout(openSheet, 500);
+}
+
+// ── EXIT: click outside phone ──
+scene.addEventListener('click', function(e) {
+  if (Date.now() - openedAt < 800) return;
+  if (!phone.contains(e.target)) exitDemo();
+});
+
+function exitDemo() {
+  closeSheet();
+  scene.classList.remove('on');
+  setTimeout(function() {
+    landing.classList.remove('away');
+    if (ctaFixed) ctaFixed.classList.remove('hidden');
+    landing.style.opacity = '';
+    landing.style.transform = '';
+  }, 550);
+}
+
+// ── SHEET ──
+function openSheet() {
+  document.getElementById('sov').classList.add('on');
+  document.getElementById('hs').classList.add('dim');
+  document.getElementById('dk').classList.add('dim');
+}
+function closeSheet() {
+  document.getElementById('sov').classList.remove('on');
+  document.getElementById('hs').classList.remove('dim');
+  document.getElementById('dk').classList.remove('dim');
+  setTimeout(function() { document.getElementById('cflip').classList.remove('flipped'); }, 300);
+}
+
+document.querySelector('.p-hs').addEventListener('click', function(e) { e.stopPropagation(); openSheet(); });
+document.querySelector('.dock').addEventListener('click', function(e) { e.stopPropagation(); });
+
+// ── NAV ──
+var navSections = ['sec-idea','sec-moods','sec-how','sec-design'];
+var navItems = document.querySelectorAll('.sb-nav-item');
+
+navItems.forEach(function(item, i) {
+  item.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var el = document.getElementById(navSections[i]);
+    if (el) mn.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+  });
+});
+
+mn.addEventListener('scroll', function() {
+  var st = mn.scrollTop;
+  var active = 0;
+  navSections.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (el && el.offsetTop <= st + 200) active = i;
+  });
+  navItems.forEach(function(n, i) { n.classList.toggle('on', i === active); });
+});
+
+// ── MOODS ──
+var M = {
+  good:     { msg:"You've got good energy today. Let's use it.", shape:'TODAY: FULL ENERGY', pip:'#34C759', feat:'Finish the project proposal draft', src:'Calendar', quote:'Work less as individuals, more as a team.', tasks:[{t:'09:00',n:'Team standup',s:'Google Calendar'},{t:'10:00',n:'Deep work — proposal',s:'Reminders'},{t:'11:30',n:'Reply to emails',s:'Gmail · 3 unread'},{t:'12:30',n:'Lunch',s:'Suggested'},{t:'14:00',n:'Call with the bank',s:'Reminders · Due today'},{t:'15:30',n:'Gym',s:'Reminders · Recurring'},{t:'18:00',n:'Dinner with Sam',s:'Google Calendar'}] },
+  tired:    { msg:"Showing up is enough. Keep it simple today.", shape:'TODAY: GENTLE PACE', pip:'#c8a000', feat:'Reply to Maya about the apartment', src:'Gmail · Unread', quote:'Rest is not idleness. — John Lubbock', tasks:[{t:'10:00',n:'Team standup',s:'Google Calendar'},{t:'12:00',n:'Lunch — take your time',s:'Suggested'},{t:'14:00',n:'Call with the bank',s:'Reminders · Due today'}] },
+  anxious:  { msg:"One thing at a time. That's all.", shape:'TODAY: ONE THING', pip:'#d44a00', feat:'Reply to Maya about the apartment', src:'Gmail · Unread', quote:"You don't have to see the whole staircase.", tasks:[{t:'10:00',n:'Team standup',s:'Google Calendar'},{t:'14:00',n:'Call with the bank',s:'Reminders · Due today'}] },
+  low:      { msg:"Today just needs to exist. That's okay.", shape:'TODAY: JUST EXIST', pip:'#0055cc', feat:'One small win: tidy your space', src:'Suggested by AI', quote:'Even the darkest night will end. — Hugo', tasks:[{t:'11:00',n:'Team standup — optional',s:'Google Calendar'}] },
+  scattered:{ msg:"Let's give your brain a shape for today.", shape:'TODAY: SHAPED', pip:'#7a30cc', feat:'20 min: clear your inbox', src:'Gmail', quote:'Order is not pressure from without.', tasks:[{t:'09:30',n:'15 min — reply to Maya',s:'Gmail'},{t:'10:00',n:'Team standup',s:'Google Calendar'},{t:'11:00',n:'Call with the bank',s:'Reminders'},{t:'13:30',n:'25 min focus block',s:'Suggested'}] }
+};
+
+function pickMood(k) {
+  var d = M[k];
+  document.getElementById('bmsg').textContent = d.msg;
+  document.getElementById('bshape').textContent = d.shape;
+  document.getElementById('bpip').style.background = d.pip;
+  document.getElementById('bfeat').textContent = d.feat;
+  document.getElementById('bsrc').textContent = d.src;
+  document.getElementById('bchk').classList.remove('done');
+  document.getElementById('bquote').textContent = d.quote;
+  var c = document.getElementById('btasks'); c.innerHTML = '';
+  for (var i = 0; i < d.tasks.length; i++) {
+    (function(i, tk) {
+      var row = document.createElement('div'); row.className = 'tsk';
+      var tm = document.createElement('span'); tm.className = 'tsk-t'; tm.textContent = tk.t;
+      var ar = document.createElement('span'); ar.className = 'tsk-a'; ar.id = 'ar'+i; ar.textContent = '›';
+      var nm = document.createElement('span'); nm.className = 'tsk-n'; nm.textContent = tk.n;
+      var ch = document.createElement('div'); ch.className = 'tsk-c'; ch.textContent = '✓';
+      ch.onclick = function(e) { e.stopPropagation(); this.classList.toggle('done'); };
+      row.appendChild(tm); row.appendChild(ar); row.appendChild(nm); row.appendChild(ch);
+      var sr = document.createElement('div'); sr.className = 'src-row'; sr.id = 'sr'+i; sr.textContent = tk.s;
+      row.onclick = function(e) {
+        e.stopPropagation();
+        var open = sr.classList.contains('open');
+        document.querySelectorAll('.src-row').forEach(function(x) { x.classList.remove('open'); });
+        document.querySelectorAll('.tsk-a').forEach(function(x) { x.style.transform = ''; });
+        if (!open) { sr.classList.add('open'); ar.style.transform = 'rotate(90deg)'; }
+      };
+      c.appendChild(row); c.appendChild(sr);
+    })(i, d.tasks[i]);
+  }
+  document.getElementById('cflip').classList.add('flipped');
+}
+
+function flipBack() { document.getElementById('cflip').classList.remove('flipped'); }
+</script>
+</body>
+</html>
